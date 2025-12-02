@@ -1,33 +1,42 @@
-import { auth } from '@clerk/nextjs/server'
-import React from 'react'
+import { auth } from "@clerk/nextjs/server";
 
 const Page = async () => {
-    const { getToken } = await auth()
-    const token = await getToken()
+    const { getToken } = await auth();
+    const token = await getToken();
 
-    const productResponse = await fetch("http://localhost:3000/test", {
-        headers: {
-            Authorization: `Bearer ${token}`
-        }
-    })
-    const productData = await productResponse.json()
+    if (!token) {
+        return <div>Unauthorized: No token found</div>;
+    }
 
-    const orderResponse = await fetch("http://localhost:8001/test", {
-        headers: {
-            Authorization: `Bearer ${token}`
-        }
-    })
-    const orderData = await orderResponse.json()
+    const endpoints = {
+        products: "http://localhost:3000/test",
+        orders: "http://localhost:8001/test",
+        payments: "http://localhost:8002/test",
+    };
 
-    const paymentResponse = await fetch("http://localhost:8002/test", {
-        headers: {
-            Authorization: `Bearer ${token}`
-        }
-    })
-    const paymentData = await paymentResponse.json()
+    const [productRes, orderRes, paymentRes] = await Promise.all([
+        fetch(endpoints.products, {
+            headers: { Authorization: `Bearer ${token}` },
+            cache: "no-store",
+        }),
+        fetch(endpoints.orders, {
+            headers: { Authorization: `Bearer ${token}` },
+            cache: "no-store",
+        }),
+        fetch(endpoints.payments, {
+            headers: { Authorization: `Bearer ${token}` },
+            cache: "no-store",
+        }),
+    ]);
+
+    const [productData, orderData, paymentData] = await Promise.all([
+        productRes.json(),
+        orderRes.json(),
+        paymentRes.json(),
+    ]);
 
     return (
-        <div className='py-12'>
+        <div className="py-12">
             <section>
                 <h2>Products</h2>
                 <pre>{JSON.stringify(productData, null, 2)}</pre>
@@ -43,7 +52,7 @@ const Page = async () => {
                 <pre>{JSON.stringify(paymentData, null, 2)}</pre>
             </section>
         </div>
-    )
-}
+    );
+};
 
-export default Page
+export default Page;

@@ -1,5 +1,6 @@
 import Fastify from 'fastify';
-import { clerkClient, clerkPlugin, getAuth } from '@clerk/fastify'
+import { clerkPlugin } from '@clerk/fastify'
+import { shouldBeUser } from './middleware/authMiddleware.js';
 
 const fastify = Fastify();
 fastify.register(clerkPlugin)
@@ -14,15 +15,8 @@ fastify.get('/health', (request, reply) => {
 })
 
 
-fastify.get('/test', (request, reply) => {
-
-    const { isAuthenticated, userId } = getAuth(request)
-    if (!isAuthenticated) {
-        return reply.code(401).send({ error: 'Order Service: You are not logged in.' })
-    } else {
-        reply.status(200).send({ message: 'Order Service: You are logged in!' })
-    }
-
+fastify.get('/test', { preHandler: shouldBeUser }, (request, reply) => {
+    reply.status(200).send({ message: 'Order Service: You are logged in!', userId: request.userId })
 })
 
 const start = async () => {

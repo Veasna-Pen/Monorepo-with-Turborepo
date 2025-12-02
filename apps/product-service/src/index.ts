@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
-import { clerkMiddleware, getAuth } from '@clerk/express'
+import { clerkMiddleware } from '@clerk/express'
+import { shouldBeUser } from './middleware/authMiddleware.js';
 
 
 const app = express();
@@ -19,15 +20,8 @@ app.get('/health', (req: Request, res: Response) => {
     })
 })
 
-app.get('/test', (req: Request, res: Response) => {
-    const auth = getAuth(req)
-
-    const userId = auth.userId;
-    if (userId) {
-        res.status(200).json({ message: 'Product Service: You are logged in!' });
-    } else {
-        res.status(401).json({ message: 'Product Service: You are not logged in.' });
-    }
+app.get('/test', shouldBeUser, (req: Request, res: Response) => {
+    res.status(200).json({ message: 'Product Service: You are logged in!', userId: req.userId });
 })
 
 app.listen(3000, () => {
